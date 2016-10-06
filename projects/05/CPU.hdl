@@ -40,4 +40,27 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    Mux16(a=toareg ,b=instruction ,sel=adressing ,out=outmux1);
+    Not(in=instruction[15], out=adressing);
+    Or(a=instruction[5], b=adressing, out=writetoa);
+    ARegister(in=outmux1 ,load=writetoa ,out=aregout, out[0..14]=addressM);
+    Mux16(a=aregout ,b=inM ,sel=instruction[12] ,out=aluin2);
+    //Write to D conditions
+    And(a=instruction[4], b=instruction[15], out=writetod);
+    DRegister(in=todreg ,load=writetod ,out=aluin1 );
+    ALU(x=aluin1 ,y=aluin2 ,zx=instruction[11] ,nx=instruction[10] ,zy=instruction[9] ,ny=instruction[8] ,f=instruction[7] ,no=instruction[6] ,out=outM, out=toareg, out=todreg ,zr=zero ,ng=negative);
+    PC(in=aregout ,load=shouldload ,inc=true ,reset=reset ,out[0..14]=pc );//maybe only inc if Not load
+    And(a=instruction[3], b=instruction[15], out=writeM);
+
+    // PC logic
+    Not(in=negative, out=positive);
+    Not(in=zero, out=notzero);
+    And(a=notzero,b=positive,out=j3val);
+    And(a=zero,b=true,out=j2val);
+    And(a=notzero,b=negative,out=j1val);
+    And(a=j3val,b=instruction[0],out=j3true);
+    And(a=j2val,b=instruction[1],out=j2true);
+    And(a=j1val,b=instruction[2],out=j1true);
+    Or8Way(in[0..4]=false, in[5]=j1true, in[6]=j2true, in[7]=j3true ,out=jmp);
+    And(a=jmp,b=instruction[15],out=shouldload);
 }
